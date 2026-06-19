@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سیستەمی ئامادەبوون</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #060d1f; color: #c8d8f0; direction: rtl; min-height: 100vh; }
+  :root {
+    --bg1: #060d1f; --bg2: #0f1729; --bg3: #1a2a4a;
+    --border: #2a3a6a; --blue: #7eb8f7; --green: #22c55e;
+    --amber: #f59e0b; --red: #ef4444; --text: #c8d8f0; --muted: #6a7a9a;
+  }
+  /* HEADER */
+  #header {
+    background: #080f22; border-bottom: 1px solid var(--border);
+    padding: 14px 20px; display: flex; align-items: center;
+    justify-content: space-between; position: sticky; top: 0; z-index: 100;
+  }
+  #header h1 { color: var(--blue); font-size: 17px; font-weight: 800; }
+  #header small { color: var(--muted); font-size: 11px; display: block; margin-top: 2px; }
+  /* TABS */
+  #tabs { display: flex; background: #080f22; border-bottom: 1px solid var(--border); overflow-x: auto; }
+  .tab-btn {
+    background: none; border: none; border-bottom: 2.5px solid transparent;
+    padding: 13px 16px; color: var(--muted); cursor: pointer;
+    font-size: 13px; white-space: nowrap; font-family: inherit; transition: all 0.2s;
+  }
+  .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 700; }
+  /* CONTENT */
+  #content { padding: 20px 16px; max-width: 720px; margin: 0 auto; }
+  /* CARDS */
+  .card {
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: 16px; padding: 16px 18px; margin-bottom: 14px;
+  }
+  .card-header {
+    background: linear-gradient(90deg, var(--bg3), var(--bg2));
+    padding: 14px 18px; border-radius: 12px 12px 0 0;
+    display: flex; justify-content: space-between; align-items: center;
+    margin: -16px -18px 14px;
+  }
+  /* BUTTONS */
+  .btn {
+    background: var(--bg3); color: var(--blue); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 8px 16px; cursor: pointer;
+    font-size: 13px; font-family: inherit; transition: opacity 0.2s;
+  }
+  .btn:hover { opacity: 0.8; }
+  .btn-primary {
+    background: linear-gradient(135deg, #2a6ae8, #1a4ac0);
+    color: #fff; border: none;
+  }
+  .btn-danger { background: rgba(239,68,68,0.1); color: var(--red); border-color: rgba(239,68,68,0.3); }
+  /* INPUTS */
+  input[type=text], input[type=date], select {
+    background: #0a1020; color: var(--text); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; font-size: 14px;
+    font-family: inherit; outline: none; direction: rtl;
+  }
+  input[type=text]:focus, input[type=date]:focus { border-color: var(--blue); }
+  /* STAT CARDS */
+  .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 22px; }
+  .stat { background: var(--bg2); border: 1.5px solid var(--border); border-radius: 16px; padding: 16px 10px; text-align: center; }
+  .stat-icon { font-size: 24px; margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 800; line-height: 1; }
+  .stat-label { color: var(--muted); font-size: 11px; margin-top: 4px; }
+  /* TAG */
+  .tag { display: inline-block; border-radius: 6px; padding: 3px 10px; font-size: 11px; }
+  .tag-theory { background: rgba(126,184,247,0.12); color: var(--blue); }
+  .tag-practical { background: rgba(245,158,11,0.15); color: var(--amber); }
+  /* STUDENT CHIPS */
+  .chip {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 12px; display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; margin: 4px;
+  }
+  .chip-remove { background: none; border: none; color: var(--red); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(5,10,25,0.96);
+    align-items: center; justify-content: center; z-index: 999;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2); border: 1.5px solid var(--border);
+    border-radius: 20px; padding: 28px; max-width: 400px; width: 90%;
+  }
+  .modal h3 { color: var(--blue); margin-bottom: 18px; font-size: 16px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { color: #9aabcc; font-size: 13px; display: block; margin-bottom: 6px; }
+  .form-group input, .form-group select { width: 100%; }
+  /* NOTIFICATION */
+  #notification {
+    display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 9999; border-radius: 12px; padding: 12px 24px;
+    font-size: 14px; font-weight: 600; color: #fff;
+  }
+  /* QR */
+  .qr-row { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+  .qr-img { width: 88px; height: 88px; border-radius: 10px; border: 2px solid var(--border); background: #fff; flex-shrink: 0; }
+  /* SCANNER */
+  #scannerBox { position: relative; border-radius: 14px; overflow: hidden; background: #000; margin-bottom: 14px; }
+  #scannerBox video { width: 100%; display: block; }
+  #scannerBox .frame {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 150px; height: 150px; border: 2.5px solid var(--blue); border-radius: 10px;
+    box-shadow: 0 0 0 2000px rgba(0,0,0,0.35); pointer-events: none;
+  }
+  #scannerBox .border-overlay {
+    position: absolute; inset: 0; border: 3px solid var(--blue); border-radius: 14px; pointer-events: none;
+  }
+  canvas#qrCanvas { display: none; }
+  /* STUDENT VIEW */
+  #studentView { display: none; }
+  #adminView { display: block; }
+  .view-switcher { background: linear-gradient(135deg, var(--bg3), #0f2040); color: var(--blue); border: 1.5px solid #2a4a8a; border-radius: 10px; padding: 8px 16px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit; }
+  /* EMPTY */
+  .empty { color: var(--muted); text-align: center; padding: 20px 0; font-size: 13px; }
+  /* COURSE ROW */
+  .course-row { display: flex; align-items: center; justify-content: space-between; cursor: pointer; padding: 4px 0; }
+  .course-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .course-count { color: var(--green); font-size: 24px; font-weight: 800; text-align: center; }
+  .course-count small { color: var(--muted); font-size: 11px; display: block; }
+  /* EXTRA ITEM */
+  .extra-item { display: flex; justify-content: space-between; align-items: center; background: #1a2040; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; }
+  .add-extra-btn { background: rgba(126,184,247,0.08); color: var(--blue); border: 1.5px dashed #2a4a7a; border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: 12px; width: 100%; margin-top: 4px; font-family: inherit; }
+</style>
+</head>
+<body>
+
+<!-- NOTIFICATION -->
+<div id="notification"></div>
+
+<!-- ===== ADMIN VIEW ===== -->
+<div id="adminView">
+  <div id="header">
+    <div>
+      <h1>🎓 سیستەمی ئامادەبوون</h1>
+      <small>سەرۆکی بەش — پانێڵی کۆنتڕۆڵ</small>
+    </div>
+    <button class="view-switcher" onclick="switchView('student')">📱 نمایشی خوێندکار</button>
+  </div>
+  <div id="tabs">
+    <button class="tab-btn active" onclick="showTab('dashboard')">📊 داشبۆرد</button>
+    <button class="tab-btn" onclick="showTab('qr')">🔳 QR کۆدەکان</button>
+    <button class="tab-btn" onclick="showTab('attendance')">✅ ئامادەبوون</button>
+    <button class="tab-btn" onclick="showTab('settings')">⚙️ ڕێکخستن</button>
+  </div>
+  <div id="content">
+    <div id="tab-dashboard"></div>
+    <div id="tab-qr" style="display:none"></div>
+    <div id="tab-attendance" style="display:none"></div>
+    <div id="tab-settings" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ===== STUDENT VIEW ===== -->
+<div id="studentView">
+  <div id="header">
+    <div>
+      <h1>📱 ثبتی ئامادەبوون</h1>
+      <small>خوێندکار</small>
+    </div>
+    <button class="view-switcher" onclick="switchView('admin')">👤 بەش</button>
+  </div>
+  <div id="content" style="max-width:500px;margin:0 auto;padding:20px 16px;text-align:center">
+    <div class="card" style="text-align:center;padding:32px">
+      <div style="font-size:52px;margin-bottom:12px">📱</div>
+      <h2 style="color:var(--blue);font-size:20px;margin-bottom:8px">سکانی QR کۆد</h2>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:22px">QR کۆدی هۆڵ یان تاقیگەکە سکان بکە</p>
+      <button class="btn btn-primary" onclick="startScan()" style="width:100%;padding:14px;font-size:15px;font-weight:700;border-radius:12px;font-family:inherit">📷 سکانی QR کۆد</button>
+    </div>
+    <div id="scanArea" style="display:none" class="card">
+      <div id="scannerBox">
+        <video id="scanVideo" playsinline muted></video>
+        <div class="frame"></div>
+        <div class="border-overlay"></div>
+      </div>
+      <canvas id="qrCanvas"></canvas>
+      <p id="scanStatus" style="color:var(--muted);font-size:13px;margin-bottom:12px">دەستپێکردنی کامێرا...</p>
+      <div style="margin-bottom:12px">
+        <p style="color:var(--muted);font-size:12px;margin-bottom:6px">یان کۆدی دەرسەکە بنووسە:</p>
+        <input type="text" id="manualCode" placeholder="c1_2024-01-15" style="width:100%;margin-bottom:8px">
+        <button class="btn btn-primary" onclick="processManual()" style="width:100%;font-family:inherit">پشتڕاستکردنەوە ✓</button>
+      </div>
+      <button class="btn" onclick="stopScan()" style="width:100%;font-family:inherit">داخستن</button>
+    </div>
+    <div id="scanResult" style="display:none" class="card"></div>
+  </div>
+</div>
+
+<!-- ===== EDIT MODAL ===== -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3>✏️ دەستکاری دەرس</h3>
+    <input type="hidden" id="editId">
+    <input type="hidden" id="editIsExtra">
+    <input type="hidden" id="editParentId">
+    <div class="form-group">
+      <label>ناوی دەرس</label>
+      <input type="text" id="editName">
+    </div>
+    <div class="form-group">
+      <label>جێگا (هۆڵ / تاقیگە)</label>
+      <input type="text" id="editRoom">
+    </div>
+    <div class="form-group" id="editTypeGroup">
+      <label>جۆر</label>
+      <select id="editType">
+        <option value="theory">📖 تیۆری</option>
+        <option value="practical">🔬 پراکتیک</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-primary" onclick="saveCourseEdit()" style="flex:1;font-family:inherit">پاشەکەوت بکە</button>
+      <button class="btn" onclick="closeModal('editModal')" style="flex:1;font-family:inherit">هەڵوەشاندن</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== QR BIG MODAL ===== -->
+<div class="modal-overlay" id="qrModal" onclick="closeModal('qrModal')">
+  <div class="modal" style="text-align:center" onclick="event.stopPropagation()">
+    <h3 id="qrModalTitle"></h3>
+    <p id="qrModalRoom" style="color:var(--muted);font-size:12px;margin-bottom:14px"></p>
+    <div style="background:#fff;border-radius:16px;padding:12px;display:inline-block;margin-bottom:14px">
+      <img id="qrModalImg" style="width:240px;height:240px;display:block">
+    </div>
+    <p style="color:var(--muted);font-size:11px;margin-bottom:16px">کۆد: <code id="qrModalCode" style="color:var(--blue)"></code></p>
+    <button class="btn" onclick="closeModal('qrModal')" style="font-family:inherit">داخستن</button>
+  </div>
+</div>
+
+<!-- ===== STUDENT NAME MODAL ===== -->
+<div class="modal-overlay" id="nameModal">
+  <div class="modal" style="text-align:center">
+    <h3>👤 ناوت بنووسە</h3>
+    <p id="nameModalCourse" style="color:var(--muted);font-size:13px;margin-bottom:16px"></p>
+    <div class="form-group">
+      <input type="text" id="studentNameInput" placeholder="ناوی تەواو..." style="width:100%;font-size:15px;padding:12px">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="confirmStudentName()" style="flex:1;font-family:inherit">ثبتکردن ✓</button>
+      <button class="btn" onclick="closeModal('nameModal');stopScan()" style="flex:1;font-family:inherit">هەڵوەشاندن</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+let courses = JSON.parse(localStorage.getItem('att_courses') || 'null') || [
+  {id:'c1', name:'ئایندەی زانست', type:'theory', room:'هۆڵی ١'},
+  {id:'c2', name:'فیزیکی گشتی', type:'theory', room:'هۆڵی ٢'},
+  {id:'c3', name:'کیمیای ئەساسی', type:'theory', room:'هۆڵی ٣'},
+  {id:'c4', name:'بیۆلۆژیای خەڵیە', type:'theory', room:'هۆڵی ٤'},
+  {id:'c5', name:'ماتماتیکی پێشکەوتوو', type:'theory', room:'هۆڵی ٥'},
+  {id:'c6', name:'کیمیای ئۆرگانیک', type:'theory', room:'هۆڵی ٦'},
+];
+let extras = JSON.parse(localStorage.getItem('att_extras') || 'null') || {
+  c3: [{id:'c3p', name:'پراکتیکی کیمیای ئەساسی', room:'تاقیگەی A', parentId:'c3'}],
+  c4: [{id:'c4p', name:'پراکتیکی بیۆلۆژیا', room:'تاقیگەی B', parentId:'c4'}],
+  c6: [{id:'c6p', name:'پراکتیکی کیمیای ئۆرگانیک', room:'تاقیگەی C', parentId:'c6'}],
+  c2: [{id:'c2p', name:'پراکتیکی فیزیک', room:'تاقیگەی فیزیک', parentId:'c2'}],
+};
+let attendance = JSON.parse(localStorage.getItem('att_data') || '{}');
+let selectedDate = new Date().toISOString().split('T')[0];
+let currentTab = 'dashboard';
+let pendingScan = null;
+let scanStream = null;
+let scanRaf = null;
+
+function save() {
+  localStorage.setItem('att_courses', JSON.stringify(courses));
+  localStorage.setItem('att_extras', JSON.stringify(extras));
+  localStorage.setItem('att_data', JSON.stringify(attendance));
+}
+
+function getAllCourses() {
+  let all = [...courses];
+  Object.values(extras).forEach(arr => all = all.concat(arr));
+  return all;
+}
+
+function attKey(courseId, date) { return 'att_' + courseId + '_' + date; }
+
+function getStudents(courseId, date) {
+  return (attendance[attKey(courseId, date)] || {students:[]}).students;
+}
+
+function addStudent(courseId, date, name) {
+  const k = attKey(courseId, date);
+  if (!attendance[k]) attendance[k] = {courseId, date, students:[]};
+  if (!attendance[k].students.includes(name)) {
+    attendance[k].students.push(name);
+    save();
+    return true;
+  }
+  return false;
+}
+
+function removeStudent(courseId, date, name) {
+  const k = attKey(courseId, date);
+  if (attendance[k]) {
+    attendance[k].students = attendance[k].students.filter(s => s !== name);
+    save();
+  }
+}
+
+// ===== NOTIFY =====
+function notify(msg, type='success') {
+  const el = document.getElementById('notification');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.background = type === 'success' ? 'rgba(34,197,94,0.9)' : type === 'warning' ? 'rgba(239,68,68,0.9)' : 'rgba(245,158,11,0.9)';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+
+// ===== MODALS =====
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ===== VIEW SWITCH =====
+function switchView(v) {
+  document.getElementById('adminView').style.display = v === 'admin' ? 'block' : 'none';
+  document.getElementById('studentView').style.display = v === 'student' ? 'block' : 'none';
+  stopScan();
+}
+
+// ===== TABS =====
+function showTab(tab) {
+  currentTab = tab;
+  ['dashboard','qr','attendance','settings'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['dashboard','qr','attendance','settings'][i] === tab);
+  });
+  renderTab(tab);
+}
+
+function renderTab(tab) {
+  if (tab === 'dashboard') renderDashboard();
+  else if (tab === 'qr') renderQR();
+  else if (tab === 'attendance') renderAttendance(null);
+  else if (tab === 'settings') renderSettings();
+}
+
+// ===== QR URL =====
+function qrUrl(data, size) {
+  return 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size + '&data=' + encodeURIComponent(data) + '&bgcolor=ffffff&color=1a1a2e&margin=10';
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  const all = getAllCourses();
+  const todayTotal = all.reduce((s, c) => s + getStudents(c.id, selectedDate).length, 0);
+  const grandTotal = Object.values(attendance).reduce((s, r) => s + (r.students||[]).length, 0);
+
+  let html = `
+  <div class="stats">
+    <div class="stat"><div class="stat-icon">📚</div><div class="stat-value" style="color:var(--blue)">${courses.length}</div><div class="stat-label">دەرس</div></div>
+    <div class="stat"><div class="stat-icon">✅</div><div class="stat-value" style="color:var(--green)">${todayTotal}</div><div class="stat-label">ئەمرۆ ئامادەبوون</div></div>
+    <div class="stat"><div class="stat-icon">📊</div><div class="stat-value" style="color:var(--amber)">${grandTotal}</div><div class="stat-label">کۆی ثبتەکان</div></div>
+  </div>
+  <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+    <span style="color:var(--blue);font-size:14px">📅 بەروار:</span>
+    <input type="date" value="${selectedDate}" onchange="selectedDate=this.value;renderTab('dashboard')" style="background:#1a2a4a;color:var(--text);border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-size:14px;outline:none">
+  </div>`;
+
+  all.forEach(c => {
+    const count = getStudents(c.id, selectedDate).length;
+    const icon = c.type === 'practical' || !c.type ? '🔬' : '📖';
+    const iconBg = (!c.type || c.type === 'practical') ? 'rgba(245,158,11,0.15)' : 'rgba(126,184,247,0.15)';
+    html += `
+    <div class="card" style="cursor:pointer" onclick="renderAttendance('${c.id}');showTab('attendance')">
+      <div class="course-row">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="course-icon" style="background:${iconBg}">${icon}</div>
+          <div>
+            <div style="color:#d0e4ff;font-weight:700;font-size:15px">${c.name}</div>
+            <div style="color:var(--muted);font-size:12px">${c.room}</div>
+          </div>
+        </div>
+        <div class="course-count">${count}<small>خوێندکار</small></div>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('tab-dashboard').innerHTML = html;
+}
+
+// ===== QR PAGE =====
+function renderQR() {
+  const all = getAllCourses();
+  let html = `<p style="color:var(--muted);font-size:13px;margin-bottom:20px">QR کۆدی هەر دەرسێک چاپ بکە. خوێندکاران دەیانسکێنن بۆ ثبتکردنی ئامادەبوون.</p>
+  <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:14px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+    <span style="color:var(--blue);font-size:14px">📅</span>
+    <input type="date" value="${selectedDate}" onchange="selectedDate=this.value;renderQR()" style="background:#1a2a4a;color:var(--text);border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-size:14px;outline:none">
+  </div>`;
+
+  all.forEach(c => {
+    const data = c.id + '_' + selectedDate;
+    html += `
+    <div class="card">
+      <div class="qr-row">
+        <img class="qr-img" src="${qrUrl(data, 90)}" alt="QR">
+        <div style="flex:1">
+          <div style="color:var(--blue);font-weight:700;font-size:15px;margin-bottom:4px">${c.name}</div>
+          <div style="color:var(--muted);font-size:12px;margin-bottom:8px">${c.room}</div>
+          <span class="tag ${(!c.type||c.type==='practical')?'tag-practical':'tag-theory'}">${(!c.type||c.type==='practical')?'🔬 پراکتیک':'📖 تیۆری'}</span>
+        </div>
+        <button class="btn" onclick="showBigQR('${c.id}','${c.name}','${c.room}','${selectedDate}')" style="flex-shrink:0">🔍 گەورە</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById('tab-qr').innerHTML = html;
+}
+
+function showBigQR(id, name, room, date) {
+  const data = id + '_' + date;
+  document.getElementById('qrModalTitle').textContent = name;
+  document.getElementById('qrModalRoom').textContent = room;
+  document.getElementById('qrModalCode').textContent = data;
+  document.getElementById('qrModalImg').src = qrUrl(data, 300);
+  openModal('qrModal');
+}
+
+// ===== ATTENDANCE PAGE =====
+let viewingCourse = null;
+function renderAttendance(courseId) {
+  viewingCourse = courseId;
+  const all = getAllCourses();
+  const list = courseId ? all.filter(c => c.id === courseId) : all;
+
+  let html = '';
+  if (courseId) {
+    html += `<button class="btn" onclick="renderAttendance(null)" style="margin-bottom:16px;font-family:inherit">← گەڕانەوە</button>`;
+  }
+  html += `<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+    <span style="color:var(--blue);font-size:14px">📅</span>
+    <input type="date" value="${selectedDate}" onchange="selectedDate=this.value;renderAttendance('${courseId||''}')" style="background:#1a2a4a;color:var(--text);border:1.5px solid var(--border);border-radius:8px;padding:6px 12px;font-size:14px;outline:none">
+  </div>`;
+
+  list.forEach(c => {
+    const students = getStudents(c.id, selectedDate);
+    html += `
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+      <div class="card-header">
+        <div>
+          <div style="color:var(--blue);font-weight:700;font-size:15px">${c.name}</div>
+          <div style="color:var(--muted);font-size:12px">${c.room}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="background:rgba(34,197,94,0.15);color:var(--green);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:700">${students.length} خوێندکار</span>
+          <button class="btn" onclick="addManual('${c.id}')" style="font-family:inherit">+ زیادکردن</button>
+        </div>
+      </div>
+      <div style="padding:12px 18px">
+        ${students.length === 0
+          ? '<div class="empty">هێشتا هیچ خوێندکارێک ثبت نەکراوە</div>'
+          : students.map(s => `<div class="chip">👤 ${s}<button class="chip-remove" onclick="removeStudentUI('${c.id}','${s}')">✕</button></div>`).join('')
+        }
+      </div>
+    </div>`;
+  });
+  document.getElementById('tab-attendance').innerHTML = html;
+}
+
+function addManual(courseId) {
+  const name = prompt('ناوی خوێندکار:');
+  if (!name?.trim()) return;
+  const added = addStudent(courseId, selectedDate, name.trim());
+  if (added) { notify('خوێندکار زیادکرا ✓'); renderAttendance(viewingCourse); }
+  else notify('ئەم خوێندکارە پێشتر ثبت بووە', 'warning');
+}
+
+function removeStudentUI(courseId, name) {
+  removeStudent(courseId, selectedDate, name);
+  notify('خوێندکار لابرا', 'warning');
+  renderAttendance(viewingCourse);
+}
+
+// ===== SETTINGS =====
+function renderSettings() {
+  let html = `<p style="color:var(--muted);font-size:13px;margin-bottom:20px">ناوی دەرسەکان، جێگاکان، و جۆرەکان بگۆڕە.</p>`;
+  courses.forEach(c => {
+    const ext = extras[c.id] || [];
+    html += `
+    <div class="card" style="padding:0;overflow:hidden;margin-bottom:16px">
+      <div class="card-header">
+        <div>
+          <div style="color:#d0e4ff;font-weight:700;font-size:15px">${c.name}</div>
+          <div style="color:var(--muted);font-size:12px">${c.room} · ${c.type==='practical'?'پراکتیک':'تیۆری'}</div>
+        </div>
+        <button class="btn" onclick="openEdit('${c.id}',false,'')" style="font-family:inherit">✏️ دەستکاری</button>
+      </div>
+      <div style="padding:10px 18px;border-top:1px solid #1a2a4a">
+        <div style="color:var(--muted);font-size:12px;margin-bottom:8px">پراکتیکەکان:</div>
+        ${ext.map(e => `
+        <div class="extra-item">
+          <div>
+            <div style="color:var(--text);font-size:13px">${e.name}</div>
+            <div style="color:var(--muted);font-size:11px">${e.room}</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn" onclick="openEdit('${e.id}',true,'${c.id}')" style="padding:4px 10px;font-size:12px;font-family:inherit">✏️</button>
+            <button class="btn btn-danger" onclick="deleteExtra('${c.id}','${e.id}')" style="padding:4px 10px;font-size:12px;font-family:inherit">🗑️</button>
+          </div>
+        </div>`).join('')}
+        <button class="add-extra-btn" onclick="addExtra('${c.id}')">+ پراکتیکی نوێ زیاد بکە</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById('tab-settings').innerHTML = html;
+}
+
+function openEdit(id, isExtra, parentId) {
+  let item;
+  if (isExtra) {
+    item = (extras[parentId]||[]).find(e => e.id === id);
+  } else {
+    item = courses.find(c => c.id === id);
+  }
+  if (!item) return;
+  document.getElementById('editId').value = id;
+  document.getElementById('editIsExtra').value = isExtra ? '1' : '0';
+  document.getElementById('editParentId').value = parentId;
+  document.getElementById('editName').value = item.name;
+  document.getElementById('editRoom').value = item.room;
+  document.getElementById('editType').value = item.type || 'theory';
+  document.getElementById('editTypeGroup').style.display = isExtra ? 'none' : 'block';
+  openModal('editModal');
+}
+
+function saveCourseEdit() {
+  const id = document.getElementById('editId').value;
+  const isExtra = document.getElementById('editIsExtra').value === '1';
+  const parentId = document.getElementById('editParentId').value;
+  const name = document.getElementById('editName').value.trim();
+  const room = document.getElementById('editRoom').value.trim();
+  const type = document.getElementById('editType').value;
+  if (!name) return;
+  if (isExtra) {
+    extras[parentId] = (extras[parentId]||[]).map(e => e.id === id ? {...e, name, room} : e);
+  } else {
+    courses = courses.map(c => c.id === id ? {...c, name, room, type} : c);
+  }
+  save();
+  closeModal('editModal');
+  notify('پارچەکە نوێکرایەوە ✓');
+  renderSettings();
+}
+
+function addExtra(parentId) {
+  const name = prompt('ناوی پراکتیکەکە:');
+  if (!name?.trim()) return;
+  const room = prompt('جێگای تاقیگە:') || 'تاقیگە';
+  const id = 'e' + Date.now();
+  if (!extras[parentId]) extras[parentId] = [];
+  extras[parentId].push({id, name:name.trim(), type:'practical', room, parentId});
+  save();
+  notify('پراکتیک زیادکرا ✓');
+  renderSettings();
+}
+
+function deleteExtra(parentId, id) {
+  if (!confirm('دڵنیایت لە سڕینەوە؟')) return;
+  extras[parentId] = (extras[parentId]||[]).filter(e => e.id !== id);
+  save();
+  notify('پراکتیک لابرا', 'warning');
+  renderSettings();
+}
+
+// ===== SCANNER =====
+let pendingCourseId = null;
+
+function startScan() {
+  document.getElementById('scanArea').style.display = 'block';
+  document.getElementById('scanResult').style.display = 'none';
+  document.getElementById('scanStatus').textContent = 'دەستپێکردنی کامێرا...';
+  navigator.mediaDevices?.getUserMedia({video:{facingMode:'environment'}})
+    .then(stream => {
+      scanStream = stream;
+      const v = document.getElementById('scanVideo');
+      v.srcObject = stream;
+      v.play();
+      document.getElementById('scanStatus').textContent = 'QR کۆدەکە بخرە بەرامبەر کامێراکە';
+      scanLoop();
+    })
+    .catch(() => {
+      document.getElementById('scanStatus').textContent = 'کامێرا بەردەست نییە. کۆدەکە دەستکی بنووسە.';
+    });
+}
+
+function scanLoop() {
+  const v = document.getElementById('scanVideo');
+  const c = document.getElementById('qrCanvas');
+  if (!v || !c) return;
+  if (v.readyState === v.HAVE_ENOUGH_DATA && window.jsQR) {
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(v, 0, 0, c.width, c.height);
+    const img = ctx.getImageData(0, 0, c.width, c.height);
+    const code = jsQR(img.data, img.width, img.height, {inversionAttempts:'dontInvert'});
+    if (code) { stopScan(); processQR(code.data); return; }
+  }
+  scanRaf = requestAnimationFrame(scanLoop);
+}
+
+function stopScan() {
+  cancelAnimationFrame(scanRaf);
+  if (scanStream) { scanStream.getTracks().forEach(t => t.stop()); scanStream = null; }
+  const v = document.getElementById('scanVideo');
+  if (v) { v.srcObject = null; }
+  document.getElementById('scanArea').style.display = 'none';
+}
+
+function processManual() {
+  const val = document.getElementById('manualCode').value.trim();
+  if (val) processQR(val);
+}
+
+function processQR(data) {
+  let courseId = null, date = null;
+  try {
+    const u = new URL(data);
+    const p = u.pathname.replace(/^\//,'').split('/');
+    courseId = p[0]; date = p[1] || selectedDate;
+  } catch {
+    const p = data.split('_');
+    courseId = p[0]; date = p.slice(1).join('_') || selectedDate;
+  }
+  const all = getAllCourses();
+  const course = all.find(c => c.id === courseId);
+  if (!course) {
+    showScanResult(false, 'دەرسی نەدۆزرایەوە! کۆدی هەڵەیە: ' + data);
+    return;
+  }
+  pendingScan = {courseId, date, courseName: course.name};
+  document.getElementById('nameModalCourse').textContent = 'دەرس: ' + course.name + ' — ' + date;
+  document.getElementById('studentNameInput').value = '';
+  openModal('nameModal');
+  setTimeout(() => document.getElementById('studentNameInput').focus(), 100);
+}
+
+document.getElementById('studentNameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmStudentName();
+});
+
+function confirmStudentName() {
+  const name = document.getElementById('studentNameInput').value.trim();
+  if (!name) return;
+  closeModal('nameModal');
+  if (!pendingScan) return;
+  const {courseId, date, courseName} = pendingScan;
+  pendingScan = null;
+  const added = addStudent(courseId, date, name);
+  showScanResult(true, added
+    ? `${name}، سەرکەوتوو ثبت بووی بۆ\n"${courseName}"`
+    : `${name}، پێشتر ثبت بووە بۆ "${courseName}"`
+  );
+}
+
+function showScanResult(ok, msg) {
+  const el = document.getElementById('scanResult');
+  el.style.display = 'block';
+  el.style.background = ok ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)';
+  el.style.border = '1.5px solid ' + (ok ? 'var(--green)' : 'var(--red)');
+  el.style.color = ok ? 'var(--green)' : 'var(--red)';
+  el.style.fontWeight = '600'; el.style.fontSize = '15px';
+  el.innerHTML = (ok ? '✅ ' : '❌ ') + msg.replace('\n','<br>');
+}
+
+// ===== INIT =====
+renderDashboard();
+</script>
+</body>
+</html>
